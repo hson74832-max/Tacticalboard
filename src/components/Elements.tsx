@@ -296,6 +296,7 @@ export function DrawingPath({
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={dash}
+        filter={el.type === "pen" ? "url(#smooth-stroke)" : undefined}
       />
       {showArrow && el.points.length >= 2 && (
         <Arrowhead
@@ -350,20 +351,7 @@ function isCurvedType(type: DrawingEl["type"]) {
   return type === "curve" || type === "curveDashed" || type === "curveArrow" || type === "curveDashedArrow";
 }
 
-function curveControl(p1: Point, p2: Point) {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const nx = -dy / len;
-  const ny = dx / len;
-  const bend = Math.min(Math.max(len * 0.18, 3), 9);
-  return {
-    x: (p1.x + p2.x) / 2 + nx * bend,
-    y: (p1.y + p2.y) / 2 + ny * bend,
-  };
-}
-
-function curvedPathFromPoints(points: Point[], shortenBy = 0) {
+export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   const p1 = points[0];
@@ -380,6 +368,19 @@ function curvedPathFromPoints(points: Point[], shortenBy = 0) {
     };
   }
   return `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${end.x} ${end.y}`;
+}
+
+function curveControl(p1: Point, p2: Point) {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const bend = Math.min(Math.max(len * 0.18, 3), 9);
+  return {
+    x: (p1.x + p2.x) / 2 + nx * bend,
+    y: (p1.y + p2.y) / 2 + ny * bend,
+  };
 }
 
 export function pathFromPoints(points: Point[], smooth: boolean) {
