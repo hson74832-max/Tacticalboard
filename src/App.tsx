@@ -72,6 +72,11 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const GRID_STEP = 2.5;
 const snapToGrid = (v: number) => Math.round(v / GRID_STEP) * GRID_STEP;
 
+// Helper to check if a draw type is curved (for multi-point drawing)
+function isCurvedType(type: string): boolean {
+  return type === "curve" || type === "curveDashed" || type === "curveArrow" || type === "curveDashedArrow";
+}
+
 /* ============================== App ============================== */
 export default function App() {
   const [board, setBoard] = useState<Board>(emptyBoard());
@@ -283,14 +288,15 @@ export default function App() {
       gestureStart.current = board;
       interactionMode.current = "draw";
       setSelectedId(null);
-      const isMulti = drawKind === "pen";
+      // Multi-point tools: pen and all curve variants start with single point
+      const isMultiPoint = drawKind === "pen" || isCurvedType(drawKind);
       setDraft({
         id: uid(),
         kind: "drawing",
         type: drawKind,
         color,
         width: strokeWidth,
-        points: isMulti ? [p] : [p, p],
+        points: isMultiPoint ? [p] : [p, p],
       });
       return;
     }
@@ -332,7 +338,13 @@ export default function App() {
       moved.current = true;
       setDraft((d) => {
         if (!d) return d;
-        if (d.type === "pen") return { ...d, points: [...d.points, p] };
+        // Multi-point tools: pen and all curve variants
+        const isMultiPoint = d.type === "pen" || isCurvedType(d.type);
+        if (isMultiPoint) {
+          // Add point for continuous drawing
+          return { ...d, points: [...d.points, p] };
+        }
+        // Two-point tools: line, arrow, dashed, dashedArrow
         return { ...d, points: [d.points[0], p] };
       });
       return;
@@ -370,14 +382,14 @@ export default function App() {
     activePointer.current = null;
 
     if (interactionMode.current === "draw" && draft) {
-      const valid =
-        draft.type === "pen"
-          ? draft.points.length > 1
-          : draft.points.length >= 2 &&
-            Math.hypot(
-              draft.points[1].x - draft.points[0].x,
-              draft.points[1].y - draft.points[0].y,
-            ) > 1;
+      const isMultiPoint = draft.type === "pen" || isCurvedType(draft.type);
+      const valid = isMultiPoint
+        ? draft.points.length > 1
+        : draft.points.length >= 2 &&
+          Math.hypot(
+            draft.points[1].x - draft.points[0].x,
+            draft.points[1].y - draft.points[0].y,
+          ) > 1;
       if (valid && gestureStart.current) {
         const start = gestureStart.current;
         setPast((pp) => [...pp.slice(-49), start]);
@@ -586,16 +598,6 @@ export default function App() {
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
       >
-        <defs>
-          <filter id="smooth-stroke" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="0.6" in="SourceAlpha" result="blur" />
-            <feSpecularLighting surfaceScale="1.5" specularConstant="0.8" specularExponent="20" lightingColor="#ffffff" in="blur" result="specular">
-              <fePointLight dx="0" dy="-2" dz="3" />
-            </feSpecularLighting>
-            <feComposite in="specular" in2="blur" operator="in" result="specular-blur" />
-            <feComposite in="SourceGraphic" in2="specular-blur" operator="over" />
-          </filter>
-        </defs>
         <Pitch grass="#1d743d" stripe="#185f31" line="#d7e5d8" mode={pitchMode} />
 
         <g id="board-content">
@@ -1041,14 +1043,17 @@ function SelectedEditor({
       {el.kind === "drawing" && (
         <div className="space-y-3">
           {el.type === "text" && (
-            <div className="flex items-center gap-3">
-              <span className="w-16 text-xs text-white/60">Text</span>
-              <input
-                value={el.label || ""}
-                onChange={(e) => onChange({ label: e.target.value })}
-                placeholder="Type here..."
-                className="flex-1 rounded-lg bg-slate-700 px-3 py-1.5 text-sm outline-none placeholder:text-white/30"
-              />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <span className="w-16 text-xs text-white/60">Text</span>
+                <textarea
+                  value={el.label || ""}
+                  onChange={(e) => onChange({ label: e.target.value })}
+                  placeholder="Type here..."
+                  rows={4}
+                  className="flex-1 rounded-lg bg-slate-700 px-3 py-1.5 text-sm outline-none placeholder:text-white/30 resize-none"
+                />
+              </div>
             </div>
           )}
           <div className="flex items-center gap-3">

@@ -220,10 +220,14 @@ export function DrawingPath({
   if (el.type === "text") {
     const label = el.label || "Text";
     const fontSize = el.width * 5;
-    const estW = label.length * fontSize * 0.6 + 2;
-    const estH = fontSize * 1.4;
+    // Handle multi-line text by splitting on newlines
+    const lines = label.split("\n");
+    const lineHeight = fontSize * 1.4;
+    const maxLineLen = Math.max(...lines.map(l => l.length));
+    const estW = maxLineLen * fontSize * 0.6 + 2;
+    const estH = lines.length * lineHeight + 2;
     const cx = el.points[0].x;
-    const cy = el.points[0].y;
+    const cy = el.points[0].y - (lines.length - 1) * lineHeight / 2;
     return (
       <g data-id={el.id} style={{ cursor: "grab" }}>
         {/* invisible hit area so the text can be selected / dragged / erased */}
@@ -248,18 +252,22 @@ export function DrawingPath({
             opacity={0.7}
           />
         )}
-        <text
-          x={cx}
-          y={cy}
-          fontSize={fontSize}
-          fontWeight={700}
-          fill={el.color}
-          textAnchor="middle"
-          dominantBaseline="central"
-          style={{ userSelect: "none", pointerEvents: "none" }}
-        >
-          {label}
-        </text>
+        {lines.map((line, i) => (
+          <text
+            key={i}
+            x={cx}
+            y={cy + i * lineHeight}
+            fontSize={fontSize}
+            fontWeight={700}
+            fill={el.color}
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{ userSelect: "none", pointerEvents: "none" }}
+            whiteSpace="pre"
+          >
+            {line}
+          </text>
+        ))}
       </g>
     );
   }
@@ -296,7 +304,6 @@ export function DrawingPath({
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={dash}
-        filter={el.type === "pen" ? "url(#smooth-stroke)" : undefined}
       />
       {showArrow && el.points.length >= 2 && (
         <Arrowhead
@@ -354,6 +361,26 @@ function isCurvedType(type: DrawingEl["type"]) {
 export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  
+  // For multi-point curves, use Catmull-Rom spline interpolation for smooth continuous curves
+  if (points.length > 2) {
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i - 1] || points[i];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] || p2;
+      const tension = 0.15;
+      const c1x = p1.x + (p2.x - p0.x) * tension;
+      const c1y = p1.y + (p2.y - p0.y) * tension;
+      const c2x = p2.x - (p3.x - p1.x) * tension;
+      const c2y = p2.y - (p3.y - p1.y) * tension;
+      d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${p2.x} ${p2.y}`;
+    }
+    return d;
+  }
+  
+  // For two-point curves, use quadratic bezier
   const p1 = points[0];
   const p2 = points[points.length - 1];
   const c = curveControl(p1, p2);
@@ -389,17 +416,19 @@ export function pathFromPoints(points: Point[], smooth: boolean) {
   if (!smooth) {
     return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   }
-  // Catmull-Rom -> bezier smoothing
+  // Enhanced Catmull-Rom -> bezier smoothing with tighter tension for cleaner strokes
   let d = `M ${points[0].x} ${points[0].y}`;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i - 1] || points[i];
     const p1 = points[i];
     const p2 = points[i + 1];
     const p3 = points[i + 2] || p2;
-    const c1x = p1.x + (p2.x - p0.x) / 6;
-    const c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6;
-    const c2y = p2.y - (p3.y - p1.y) / 6;
+    // Reduced tension factor (from 1/6 ≈ 0.167 to 0.12) for smoother, more fluid curves
+    const tension = 0.12;
+    const c1x = p1.x + (p2.x - p0.x) * tension;
+    const c1y = p1.y + (p2.y - p0.y) * tension;
+    const c2x = p2.x - (p3.x - p1.x) * tension;
+    const c2y = p2.y - (p3.y - p1.y) * tension;
     d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${p2.x} ${p2.y}`;
   }
   return d;
