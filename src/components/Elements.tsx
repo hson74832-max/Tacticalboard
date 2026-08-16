@@ -370,8 +370,8 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
       const p1 = points[i];
       const p2 = points[i + 1];
       const p3 = points[i + 2] || p2;
-      // Very low tension (0.08) for maximum smoothing, creating fluid S-shaped curves
-      const tension = 0.08;
+      // Very low tension (0.01) for maximum smoothing, creating fluid S-shaped curves
+      const tension = 0.01;
       const c1x = p1.x + (p2.x - p0.x) * tension;
       const c1y = p1.y + (p2.y - p0.y) * tension;
       const c2x = p2.x - (p3.x - p1.x) * tension;
@@ -404,8 +404,8 @@ function curveControl(p1: Point, p2: Point) {
   const len = Math.hypot(dx, dy) || 1;
   const nx = -dy / len;
   const ny = dx / len;
-  // Stronger bend factor (0.35 instead of 0.18) for more pronounced S-shaped curves
-  const bend = Math.min(Math.max(len * 0.35, 4), 12);
+  // Stronger bend factor (0.70 instead of 0.18) for more pronounced S-shaped curves
+  const bend = Math.min(Math.max(len * 0.70, 4), 12);
   return {
     x: (p1.x + p2.x) / 2 + nx * bend,
     y: (p1.y + p2.y) / 2 + ny * bend,
@@ -425,8 +425,8 @@ export function pathFromPoints(points: Point[], smooth: boolean) {
     const p1 = points[i];
     const p2 = points[i + 1];
     const p3 = points[i + 2] || p2;
-    // Very low tension factor (0.08) for maximum smoothing, eliminating jagged edges even when drawing slowly
-    const tension = 0.08;
+    // Very low tension factor (0.01) for maximum smoothing, eliminating jagged edges even when drawing slowly
+    const tension = 0.01;
     const c1x = p1.x + (p2.x - p0.x) * tension;
     const c1y = p1.y + (p2.y - p0.y) * tension;
     const c2x = p2.x - (p3.x - p1.x) * tension;
