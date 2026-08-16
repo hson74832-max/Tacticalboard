@@ -1,51 +1,82 @@
-```
+```gitignore
 # Dependencies
 node_modules/
 
-# Build artifacts
+# Build outputs
 dist/
-workbox-*.js
+build/
+*.js
+*.ts
+*.tsx
+*.jsx
 
-# Environment
+# Environment variables
 .env
 .env.local
 .env.*
 
-# Editors
+# IDE specific
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Logs
 *.log
 
 # Temporary files
 *.tmp
-*.swp
+*.temp
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Python artifacts (if any)
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Compiled binary files
-*.o
-*.obj
+.Python
 *.so
-*.a
-*.dll
-*.exe
-
-# Coverage reports
+.coverage
 coverage/
 htmlcov/
+.pytest_cache/
+.mypy_cache/
+.tox/
+.venv/
+venv/
+ENV/
 
-# Local configuration
-.vite/
-!.vite/deps
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+dist/
+build/
+.nyc_output/
+coverage/
+*.lcov
+.next/
+.nuxt/
+public/
+!.gitkeep
+
+# TypeScript
+*.tsbuildinfo
+*.bak
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
+```
+
+Wait, let me reconsider. The modified files are only source code files (.tsx), and there are no build artifacts or dependency directories in the changes. Following rule #6:
+
+```gitignore
 
 ```

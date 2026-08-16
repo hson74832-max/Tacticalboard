@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "./utils/cn";
 import Pitch from "./components/Pitch";
-import { DrawingPath, EquipmentToken, PlayerToken } from "./components/Elements";
+import { DrawingPath, EquipmentToken, PlayerToken, isCurvedType } from "./components/Elements";
 import {
   type Board,
   type DrawingEl,
@@ -283,7 +283,8 @@ export default function App() {
       gestureStart.current = board;
       interactionMode.current = "draw";
       setSelectedId(null);
-      const isMulti = drawKind === "pen";
+      // Multi-point tools: pen and all curve variants support continuous drawing
+      const isMulti = drawKind === "pen" || isCurvedType(drawKind);
       setDraft({
         id: uid(),
         kind: "drawing",
@@ -332,7 +333,10 @@ export default function App() {
       moved.current = true;
       setDraft((d) => {
         if (!d) return d;
-        if (d.type === "pen") return { ...d, points: [...d.points, p] };
+        // Multi-point tools accumulate points for smooth curves
+        if (d.type === "pen" || isCurvedType(d.type)) {
+          return { ...d, points: [...d.points, p] };
+        }
         return { ...d, points: [d.points[0], p] };
       });
       return;
@@ -371,7 +375,7 @@ export default function App() {
 
     if (interactionMode.current === "draw" && draft) {
       const valid =
-        draft.type === "pen"
+        draft.type === "pen" || isCurvedType(draft.type)
           ? draft.points.length > 1
           : draft.points.length >= 2 &&
             Math.hypot(
@@ -1035,7 +1039,6 @@ function SelectedEditor({
               <span className="w-16 text-xs text-white/60">Text</span>
               <input
                 value={el.label || ""}
-                maxLength={20}
                 onChange={(e) => onChange({ label: e.target.value })}
                 placeholder="Type here..."
                 className="flex-1 rounded-lg bg-slate-700 px-3 py-1.5 text-sm outline-none placeholder:text-white/30"
