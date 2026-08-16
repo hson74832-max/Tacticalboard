@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Icons</title></head>
+<body>
+<h2>PWA Icon Generator Instructions</h2>
+<p>Create a 512x512 PNG icon for TactiBoard with these requirements:</p>
+<ul>
+  <li>Background: #0f172a (slate-900)</li>
+  <li>Foreground: White football/soccer pitch diagram or tactical board symbol</li>
+  <li>Rounded corners recommended for maskable icons</li>
+</ul>
+<p>Then use a tool like <a href="https://realfavicongenerator.net/" target="_blank">RealFaviconGenerator</a> to generate all sizes.</p>
+<p>Required sizes: 72x72, 96x96, 128x128, 144x144, 152x152, 192x192, 384x384, 512x512</p>
+<canvas id="icon" width="512" height="512" style="border:1px solid #ccc;margin:20px;"></canvas>
+<script>
+const canvas = document.getElementById('icon');
+const ctx = canvas.getContext('2d');
+
+// Background
+ctx.fillStyle = '#0f172a';
+ctx.fillRect(0, 0, 512, 512);
+
+// Simple pitch diagram
+ctx.strokeStyle = '#ffffff';
+ctx.lineWidth = 8;
+ctx.strokeRect(50, 50, 412, 412);
+ctx.beginPath();
+ctx.moveTo(256, 50);
+ctx.lineTo(256, 462);
+ctx.stroke();
+ctx.beginPath();
+ctx.arc(256, 256, 60, 0, Math.PI * 2);
+ctx.stroke();
+</script>
+</body>
+</html>

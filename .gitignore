@@ -1,1 +1,51 @@
-Nothing should be ignored in this case, as only a markdown file (ANALYSIS_AND_MOBILE_GUIDE.md) was added, which is a source/config file and not a build artifact, dependency, or temporary file.
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+workbox-*.js
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Python artifacts (if any)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled binary files
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+
+# Coverage reports
+coverage/
+htmlcov/
+
+# Local configuration
+.vite/
+!.vite/deps
+
+```
