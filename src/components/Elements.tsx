@@ -168,16 +168,16 @@ function EquipmentShape({ el }: { el: EquipmentEl }) {
         <g>
           {/* net */}
           <g stroke={c} strokeOpacity={0.35} strokeWidth={0.12}>
-            {[-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5].map((x) => (
-              <line key={`v${x}`} x1={x} y1={-1.5} x2={x} y2={1.5} />
+            {[-7, -5, -3, -1, 1, 3, 5, 7].map((x) => (
+              <line key={`v${x}`} x1={x} y1={-3} x2={x} y2={3} />
             ))}
-            {[-0.9, -0.2, 0.5, 1.2].map((y) => (
-              <line key={`h${y}`} x1={-4.2} y1={y} x2={4.2} y2={y} />
+            {[-1.8, -0.4, 1, 2.4].map((y) => (
+              <line key={`h${y}`} x1={-8.4} y1={y} x2={8.4} y2={y} />
             ))}
           </g>
           {/* frame: posts + crossbar only */}
           <path
-            d="M -4.2 1.7 L -4.2 -1.6 L 4.2 -1.6 L 4.2 1.7"
+            d="M -8.4 3.4 L -8.4 -3.2 L 8.4 -3.2 L 8.4 3.4"
             fill="none"
             stroke={c}
             strokeWidth={0.55}
