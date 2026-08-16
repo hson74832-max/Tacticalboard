@@ -6,32 +6,38 @@ node_modules/
 dist/
 build/
 *.js.map
-*.tsbuildinfo
+*.ts.map
+*.jsx.map
+*.tsx.map
 
 # Environment variables
 .env
 .env.local
 .env.*
 
-# Editors
+# IDE files
 .vscode/
 .idea/
+*.swp
+*.swo
+*.tmp
 
 # Logs
 *.log
 
-# Python
+# Python cache (if applicable)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-selfcheck.json
-*.so
-.DS_Store
-Thumbs.db
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Distribution / packaging
+*.tar.gz
+*.whl
+*.egg-info/
 ```
