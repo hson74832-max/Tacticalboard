@@ -63,6 +63,7 @@ export interface DrawingEl {
   width: number;
   points: Point[];
   label?: string; // Used for text tool
+  bold?: boolean; // Used for text tool bold styling
 }
 
 export type BoardElement = PlayerEl | EquipmentEl | DrawingEl;

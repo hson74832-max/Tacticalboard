@@ -454,7 +454,7 @@ export default function App() {
       x: clamp(cx, 0, 68),
       y: clamp(cy, 0, 105),
       rotation: 0,
-      scale: 0.7,
+      scale: 0.45,
       color: col,
     };
     commit({ ...board, equipment: [...board.equipment, eq] });
@@ -1028,9 +1028,9 @@ function SelectedEditor({
             <span className="w-16 shrink-0 text-xs text-white/60">Size</span>
             <input
               type="range"
-              min={0.3}
-              max={1.5}
-              step={0.1}
+              min={0.15}
+              max={0.75}
+              step={0.05}
               value={el.scale}
               onChange={(e) => onChange({ scale: Number(e.target.value) })}
               className="flex-1 accent-emerald-500"
@@ -1053,6 +1053,15 @@ function SelectedEditor({
                   rows={4}
                   className="flex-1 rounded-lg bg-slate-700 px-3 py-1.5 text-sm outline-none placeholder:text-white/30 resize-none"
                 />
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-16 text-xs text-white/60">Style</span>
+                <button
+                  onClick={() => onChange({ bold: !el.bold })}
+                  className={`px-3 py-1.5 rounded-md text-sm font-semibold ${el.bold ? "bg-emerald-600 text-white" : "bg-slate-700 text-white/70 hover:bg-slate-600"}`}
+                >
+                  B
+                </button>
               </div>
             </div>
           )}
