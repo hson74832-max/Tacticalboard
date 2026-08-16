@@ -1028,8 +1028,8 @@ function SelectedEditor({
             <span className="w-16 shrink-0 text-xs text-white/60">Size</span>
             <input
               type="range"
-              min={0.2}
-              max={0.8}
+              min={0.35}
+              max={0.65}
               step={0.05}
               value={el.scale}
               onChange={(e) => onChange({ scale: Number(e.target.value) })}
