@@ -338,11 +338,13 @@ export default function App() {
       moved.current = true;
       setDraft((d) => {
         if (!d) return d;
-        // Multi-point tools: pen and all curve variants
-        const isMultiPoint = d.type === "pen" || isCurvedType(d.type);
-        if (isMultiPoint) {
-          // Add point for continuous drawing
+        // Pen tool: Add point for continuous freehand drawing
+        if (d.type === "pen") {
           return { ...d, points: [...d.points, p] };
+        }
+        // Curve tools: Only use start and end points to generate S-curve
+        if (isCurvedType(d.type)) {
+          return { ...d, points: [d.points[0], p] };
         }
         // Two-point tools: line, arrow, dashed, dashedArrow
         return { ...d, points: [d.points[0], p] };
