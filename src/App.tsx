@@ -342,10 +342,9 @@ export default function App() {
         if (d.type === "pen") {
           return { ...d, points: [...d.points, p] };
         }
-        // Curve tools: Accumulate points for continuous S-shaped dribbling paths
-        // Each segment between consecutive points will be rendered as an S-curve
+        // Curve tools: Only use start and end points to generate S-curve
         if (isCurvedType(d.type)) {
-          return { ...d, points: [...d.points, p] };
+          return { ...d, points: [d.points[0], p] };
         }
         // Two-point tools: line, arrow, dashed, dashedArrow
         return { ...d, points: [d.points[0], p] };

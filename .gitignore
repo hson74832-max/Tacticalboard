@@ -5,43 +5,80 @@ node_modules/
 # Build outputs
 dist/
 build/
-*.js
-*.ts
-*.tsx
+*.js.map
 
-# Environment variables
+# Environment
 .env
 .env.local
 *.env.*
 
-# IDE files
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-
-# Python cache (if present)
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Coverage reports
-coverage/
+.Python
+*.so
+.coverage
 htmlcov/
+.coverage.*
+.nyc_output/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Testing
+coverage/
+.nyc_output/
+.jest/
+jest/
 
 # Distribution / packaging
 *.tar.gz
 *.zip
-*.egg-info/
-
-# OS generated files
-.DS_Store
-Thumbs.db
+*.tgz
+*.tar
+*.gz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

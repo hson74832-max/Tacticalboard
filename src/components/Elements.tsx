@@ -263,7 +263,8 @@ export function DrawingPath({
             fill={el.color}
             textAnchor="middle"
             dominantBaseline="central"
-            style={{ userSelect: "none", pointerEvents: "none", whiteSpace: "pre" as const }}
+            style={{ userSelect: "none", pointerEvents: "none" }}
+            whiteSpace="pre"
           >
             {line}
           </text>
@@ -307,7 +308,7 @@ export function DrawingPath({
       />
       {showArrow && el.points.length >= 2 && (
         <Arrowhead
-          points={curved ? getCurvedArrowPoints(el.points) : el.points}
+          points={curved ? [curveControl(el.points[0], el.points[el.points.length - 1]), el.points[el.points.length - 1]] : el.points}
           color={el.color}
           width={el.width}
         />
@@ -346,30 +347,6 @@ function Arrowhead({ points, color, width }: { points: Point[]; color: string; w
   return <path d={`M ${p2.x} ${p2.y} L ${a.x} ${a.y} L ${b.x} ${b.y} Z`} fill={color} />;
 }
 
-/** Calculate arrow angle for curved paths based on the tangent at the end point */
-function getCurvedArrowPoints(points: Point[]): Point[] {
-  if (points.length < 2) return points;
-  
-  // For curved paths, calculate the tangent direction at the end point
-  // by computing the second control point (cp2) of the last segment
-  const lastPoint = points[points.length - 1];
-  const prevPoint = points[points.length - 2];
-  
-  // Compute the same cp2 that curvedPathFromPoints uses for the last segment
-  const dx = lastPoint.x - prevPoint.x;
-  const dy = lastPoint.y - prevPoint.y;
-  const dist = Math.hypot(dx, dy) || 1;
-  const nx = -dy / dist;
-  const ny = dx / dist;
-  
-  // The cp2 control point determines the tangent direction at the end
-  const bend = dist * 0.25;
-  const cp2 = { x: prevPoint.x + dx * 0.67 - nx * bend, y: prevPoint.y + dy * 0.67 - ny * bend };
-  
-  // Return the control point and end point for proper arrow alignment
-  return [cp2, lastPoint];
-}
-
 function isArrowType(type: DrawingEl["type"]) {
   return type === "arrow" || type === "dashedArrow" || type === "curveArrow" || type === "curveDashedArrow";
 }
@@ -386,14 +363,11 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   
-  // Build path segment by segment with S-curves between consecutive points
-  let path = `M ${points[0].x} ${points[0].y}`;
-  
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const isLastSegment = i === points.length - 2;
-    
+  // For curve tools, we ALWAYS want an S-shaped dribbling path
+  // Even with 2 points, create an S-curve by adding intermediate points
+  if (points.length === 2) {
+    const p1 = points[0];
+    const p2 = points[1];
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     const dist = Math.hypot(dx, dy) || 1;
@@ -406,19 +380,59 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
     const cp2 = { x: p1.x + dx * 0.67 - nx * bend, y: p1.y + dy * 0.67 - ny * bend };
     
     let endX = p2.x, endY = p2.y;
-    
-    // Apply shortening only to the very last segment for arrowhead
-    if (isLastSegment && shortenBy > 0) {
+    if (shortenBy > 0) {
       const tx = p2.x - cp2.x, ty = p2.y - cp2.y;
       const tLen = Math.hypot(tx, ty) || 1;
       endX = p2.x - (tx / tLen) * shortenBy;
       endY = p2.y - (ty / tLen) * shortenBy;
     }
-    
-    path += ` C ${cp1.x} ${cp1.y} ${cp2.x} ${cp2.y} ${endX} ${endY}`;
+    return `M ${p1.x} ${p1.y} C ${cp1.x} ${cp1.y} ${cp2.x} ${cp2.y} ${endX} ${endY}`;
   }
-  
+
+  // 3+ points: Continuous S-Zig-Zag via Catmull-Rom Spline to Cubic Beziers
+  let path = `M ${points[0].x} ${points[0].y}`;
+  const tension = 0.5; // 0.5 gives a perfectly smooth natural spline
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? 0 : i - 1];          // Previous point
+    const p1 = points[i];                           // Current point
+    const p2 = points[i + 1];                       // Next point
+    const p3 = points[i + 2 >= points.length ? points.length - 1 : i + 2]; // Next next
+
+    // Calculate Cubic Bezier control points for smooth curve
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+    let endX = p2.x;
+    let endY = p2.y;
+
+    // Apply shortening only to the absolute final point
+    if (i === points.length - 2 && shortenBy > 0) {
+      const tx = p2.x - cp2x, ty = p2.y - cp2y;
+      const tLen = Math.hypot(tx, ty) || 1;
+      endX = p2.x - (tx / tLen) * shortenBy;
+      endY = p2.y - (ty / tLen) * shortenBy;
+    }
+
+    path += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${endX} ${endY}`;
+  }
   return path;
+}
+
+function curveControl(p1: Point, p2: Point) {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  // Stronger bend factor (0.70 instead of 0.18) for more pronounced S-shaped curves
+  const bend = Math.min(Math.max(len * 0.70, 4), 12);
+  return {
+    x: (p1.x + p2.x) / 2 + nx * bend,
+    y: (p1.y + p2.y) / 2 + ny * bend,
+  };
 }
 
 export function pathFromPoints(points: Point[], smooth: boolean) {
