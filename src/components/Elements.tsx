@@ -168,16 +168,16 @@ function EquipmentShape({ el }: { el: EquipmentEl }) {
         <g>
           {/* net */}
           <g stroke={c} strokeOpacity={0.35} strokeWidth={0.12}>
-            {[-7, -5, -3, -1, 1, 3, 5, 7].map((x) => (
-              <line key={`v${x}`} x1={x} y1={-3} x2={x} y2={3} />
+            {[-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5].map((x) => (
+              <line key={`v${x}`} x1={x} y1={-1.5} x2={x} y2={1.5} />
             ))}
-            {[-1.8, -0.4, 1, 2.4].map((y) => (
-              <line key={`h${y}`} x1={-8.4} y1={y} x2={8.4} y2={y} />
+            {[-0.9, -0.2, 0.5, 1.2].map((y) => (
+              <line key={`h${y}`} x1={-4.2} y1={y} x2={4.2} y2={y} />
             ))}
           </g>
           {/* frame: posts + crossbar only */}
           <path
-            d="M -8.4 3.4 L -8.4 -3.2 L 8.4 -3.2 L 8.4 3.4"
+            d="M -4.2 1.7 L -4.2 -1.6 L 4.2 -1.6 L 4.2 1.7"
             fill="none"
             stroke={c}
             strokeWidth={0.55}
@@ -363,28 +363,30 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   
-  // Edge case: Only two points (simple single swerve/arc)
+  // For curve tools, we ALWAYS want an S-shaped dribbling path
+  // Even with 2 points, create an S-curve by adding intermediate points
   if (points.length === 2) {
     const p1 = points[0];
     const p2 = points[1];
-    const midX = (p1.x + p2.x) / 2;
-    const midY = (p1.y + p2.y) / 2;
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     const dist = Math.hypot(dx, dy) || 1;
-    // Perpendicular offset for a nice swerve
-    const offset = dist * 0.3;
-    const cx = midX - (dy / dist) * offset;
-    const cy = midY + (dx / dist) * offset;
+    const nx = -dy / dist;
+    const ny = dx / dist;
+    
+    // Create two control points for an S-shape
+    const bend = dist * 0.25;
+    const cp1 = { x: p1.x + dx * 0.33 + nx * bend, y: p1.y + dy * 0.33 + ny * bend };
+    const cp2 = { x: p1.x + dx * 0.67 - nx * bend, y: p1.y + dy * 0.67 - ny * bend };
     
     let endX = p2.x, endY = p2.y;
     if (shortenBy > 0) {
-      const tx = p2.x - cx, ty = p2.y - cy;
+      const tx = p2.x - cp2.x, ty = p2.y - cp2.y;
       const tLen = Math.hypot(tx, ty) || 1;
       endX = p2.x - (tx / tLen) * shortenBy;
       endY = p2.y - (ty / tLen) * shortenBy;
     }
-    return `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${endX} ${endY}`;
+    return `M ${p1.x} ${p1.y} C ${cp1.x} ${cp1.y} ${cp2.x} ${cp2.y} ${endX} ${endY}`;
   }
 
   // 3+ points: Continuous S-Zig-Zag via Catmull-Rom Spline to Cubic Beziers
