@@ -246,7 +246,8 @@ export function DrawingPath({
             y={cy - estH / 2}
             width={estW}
             height={estH}
-            fill="none"
+            fill="#fbbf24"
+            fillOpacity={0.3}
             stroke={SELECT}
             strokeWidth={0.4}
             opacity={0.9}
@@ -258,7 +259,7 @@ export function DrawingPath({
             x={cx}
             y={cy + i * lineHeight}
             fontSize={fontSize}
-            fontWeight={400}
+            fontWeight={el.bold ? 700 : 400}
             fill={el.color}
             textAnchor="middle"
             dominantBaseline="central"
@@ -362,26 +363,7 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   
-  // For multi-point curves, use Catmull-Rom spline interpolation with very low tension for ultra-smooth S-shaped curves
-  if (points.length > 2) {
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i - 1] || points[i];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2] || p2;
-      // Very low tension (0.01) for maximum smoothing, creating fluid S-shaped curves
-      const tension = 0.01;
-      const c1x = p1.x + (p2.x - p0.x) * tension;
-      const c1y = p1.y + (p2.y - p0.y) * tension;
-      const c2x = p2.x - (p3.x - p1.x) * tension;
-      const c2y = p2.y - (p3.y - p1.y) * tension;
-      d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${p2.x} ${p2.y}`;
-    }
-    return d;
-  }
-  
-  // For two-point curves, use quadratic bezier with forced S-shape (stronger curve)
+  // For two-point curves, use quadratic bezier with forced S-shape
   const p1 = points[0];
   const p2 = points[points.length - 1];
   const c = curveControl(p1, p2);
