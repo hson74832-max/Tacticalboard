@@ -571,7 +571,7 @@ export default function App() {
   /* ============================== render ============================== */
   return (
     <div
-      className="relative h-[100dvh] w-screen overflow-hidden bg-slate-900 text-white select-none"
+      className="relative h-[100dvh] w-screen overflow-hidden bg-slate-900 text-white select-none touch-none"
       style={{ touchAction: "none" }}
       onPointerDownCapture={bump}
     >
