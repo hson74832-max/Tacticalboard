@@ -281,6 +281,19 @@ export function DrawingPath({
     ? curvedPathFromPoints(el.points, showArrow ? arrowLen(el.width) : 0)
     : pathFromPoints(showArrow && el.points.length >= 2 ? shortenEnd(el.points, arrowLen(el.width)) : el.points, el.type === "pen");
 
+  // For curved arrows, get the proper control points for arrow angle calculation
+  let arrowPoints: Point[] | null = null;
+  if (showArrow && el.points.length >= 2) {
+    if (curved) {
+      const ctrlPts = getCurveEndControlPoints(el.points);
+      if (ctrlPts) {
+        arrowPoints = [ctrlPts.cp2, ctrlPts.end];
+      }
+    } else {
+      arrowPoints = el.points;
+    }
+  }
+
   return (
     <g data-id={el.id} style={{ cursor: "grab" }}>
       {/* invisible fat hit area */}
@@ -306,9 +319,9 @@ export function DrawingPath({
         strokeLinejoin="round"
         strokeDasharray={dash}
       />
-      {showArrow && el.points.length >= 2 && (
+      {arrowPoints && arrowPoints.length >= 2 && (
         <Arrowhead
-          points={curved ? [curveControl(el.points[0], el.points[el.points.length - 1]), el.points[el.points.length - 1]] : el.points}
+          points={arrowPoints}
           color={el.color}
           width={el.width}
         />
@@ -357,6 +370,16 @@ function isDashedType(type: DrawingEl["type"]) {
 
 function isCurvedType(type: DrawingEl["type"]) {
   return type === "curve" || type === "curveDashed" || type === "curveArrow" || type === "curveDashedArrow";
+}
+
+/** 
+ * Returns the tangent angle at the end of a cubic bezier curve.
+ * For a cubic bezier P(t) = (1-t)^3*P0 + 3(1-t)^2*t*CP1 + 3(1-t)*t^2*CP2 + t^3*P3,
+ * the tangent at t=1 points from CP2 to P3.
+ */
+export function getCurveEndAngle(p0: Point, cp1: Point, cp2: Point, p3: Point): number {
+  // Tangent at end is from cp2 to p3
+  return Math.atan2(p3.y - cp2.y, p3.x - cp2.x);
 }
 
 export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
@@ -421,13 +444,50 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   return path;
 }
 
+/**
+ * Get the last two control points for arrow angle calculation on curved paths.
+ * For 2-point S-curves, returns the second control point and end point.
+ * For multi-point curves, returns the last segment's cp2 and end point.
+ */
+export function getCurveEndControlPoints(points: Point[]): { cp2: Point; end: Point } | null {
+  if (points.length < 2) return null;
+  
+  if (points.length === 2) {
+    const p1 = points[0];
+    const p2 = points[1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const nx = -dy / dist;
+    const ny = dx / dist;
+    
+    const bend = dist * 0.25;
+    const cp2 = { x: p1.x + dx * 0.67 - nx * bend, y: p1.y + dy * 0.67 - ny * bend };
+    return { cp2, end: p2 };
+  }
+  
+  // Multi-point: calculate the last segment's cp2 using Catmull-Rom
+  const i = points.length - 2;
+  const p0 = points[i === 0 ? 0 : i - 1];
+  const p1 = points[i];
+  const p2 = points[i + 1];
+  const p3 = points[i + 2 >= points.length ? points.length - 1 : i + 2];
+  
+  const tension = 0.5;
+  const cp2x = p2.x - (p3.x - p1.x) * tension;
+  const cp2y = p2.y - (p3.y - p1.y) * tension;
+  
+  return { cp2: { x: cp2x, y: cp2y }, end: p2 };
+}
+
+// curveControl is no longer used - replaced by getCurveEndControlPoints for proper arrow alignment
+// Kept for backwards compatibility but not called anywhere
 function curveControl(p1: Point, p2: Point) {
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
   const len = Math.hypot(dx, dy) || 1;
   const nx = -dy / len;
   const ny = dx / len;
-  // Stronger bend factor (0.70 instead of 0.18) for more pronounced S-shaped curves
   const bend = Math.min(Math.max(len * 0.70, 4), 12);
   return {
     x: (p1.x + p2.x) / 2 + nx * bend,
