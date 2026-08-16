@@ -1,10 +1,20 @@
+```gitignore
 # Dependencies
 node_modules/
 
 # Build outputs
 dist/
 build/
-target/
+*.js.map
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
 
 # Python
 __pycache__/
@@ -12,40 +22,47 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv/
-.ENV
-.python-version
-.pytest_cache/
-.mypy_cache/
+*.so
 .coverage
+htmlcov/
+.coverage.*
+.nyc_output/
 coverage/
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Environment variables
-.env
-.env.local
-.env.*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Archives
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Testing
+coverage/
+.nyc_output/
+.jest/
+jest/
+
+# Distribution / packaging
+*.tar.gz
 *.zip
-*.gz
-*.tar
 *.tgz
+*.tar
+*.gz
 *.bz2
 *.xz
 *.7z
@@ -64,3 +81,4 @@ Thumbs.db
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+```
