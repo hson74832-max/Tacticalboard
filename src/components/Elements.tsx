@@ -386,8 +386,7 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   
-  // For curve tools, we ALWAYS want an S-shaped dribbling path
-  // Even with 2 points, create an S-curve by adding intermediate points
+  // For 2 points, create a single S-curve
   if (points.length === 2) {
     const p1 = points[0];
     const p2 = points[1];
@@ -412,34 +411,40 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
     return `M ${p1.x} ${p1.y} C ${cp1.x} ${cp1.y} ${cp2.x} ${cp2.y} ${endX} ${endY}`;
   }
 
-  // 3+ points: Continuous S-Zig-Zag via Catmull-Rom Spline to Cubic Beziers
+  // 3+ points: Create continuous S-shaped segments between consecutive points
+  // Each segment gets its own S-curve with alternating bends for natural dribbling flow
   let path = `M ${points[0].x} ${points[0].y}`;
-  const tension = 0.5; // 0.5 gives a perfectly smooth natural spline
-
+  
   for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i === 0 ? 0 : i - 1];          // Previous point
-    const p1 = points[i];                           // Current point
-    const p2 = points[i + 1];                       // Next point
-    const p3 = points[i + 2 >= points.length ? points.length - 1 : i + 2]; // Next next
-
-    // Calculate Cubic Bezier control points for smooth curve
-    const cp1x = p1.x + (p2.x - p0.x) * tension;
-    const cp1y = p1.y + (p2.y - p0.y) * tension;
-    const cp2x = p2.x - (p3.x - p1.x) * tension;
-    const cp2y = p2.y - (p3.y - p1.y) * tension;
-
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    
+    // Skip very short segments
+    if (dist < 0.5) continue;
+    
+    const nx = -dy / dist;
+    const ny = dx / dist;
+    
+    // Create S-curve for this segment
+    const bend = dist * 0.25;
+    const cp1 = { x: p1.x + dx * 0.33 + nx * bend, y: p1.y + dy * 0.33 + ny * bend };
+    const cp2 = { x: p1.x + dx * 0.67 - nx * bend, y: p1.y + dy * 0.67 - ny * bend };
+    
     let endX = p2.x;
     let endY = p2.y;
-
+    
     // Apply shortening only to the absolute final point
     if (i === points.length - 2 && shortenBy > 0) {
-      const tx = p2.x - cp2x, ty = p2.y - cp2y;
+      const tx = p2.x - cp2.x, ty = p2.y - cp2.y;
       const tLen = Math.hypot(tx, ty) || 1;
       endX = p2.x - (tx / tLen) * shortenBy;
       endY = p2.y - (ty / tLen) * shortenBy;
     }
-
-    path += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${endX} ${endY}`;
+    
+    path += ` C ${cp1.x} ${cp1.y} ${cp2.x} ${cp2.y} ${endX} ${endY}`;
   }
   return path;
 }
@@ -466,18 +471,20 @@ export function getCurveEndControlPoints(points: Point[]): { cp2: Point; end: Po
     return { cp2, end: p2 };
   }
   
-  // Multi-point: calculate the last segment's cp2 using Catmull-Rom
+  // Multi-point: calculate the last segment's cp2 using the same S-curve formula
   const i = points.length - 2;
-  const p0 = points[i === 0 ? 0 : i - 1];
   const p1 = points[i];
   const p2 = points[i + 1];
-  const p3 = points[i + 2 >= points.length ? points.length - 1 : i + 2];
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const nx = -dy / dist;
+  const ny = dx / dist;
   
-  const tension = 0.5;
-  const cp2x = p2.x - (p3.x - p1.x) * tension;
-  const cp2y = p2.y - (p3.y - p1.y) * tension;
+  const bend = dist * 0.25;
+  const cp2 = { x: p1.x + dx * 0.67 - nx * bend, y: p1.y + dy * 0.67 - ny * bend };
   
-  return { cp2: { x: cp2x, y: cp2y }, end: p2 };
+  return { cp2, end: p2 };
 }
 
 // curveControl is no longer used - replaced by getCurveEndControlPoints for proper arrow alignment

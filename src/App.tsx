@@ -342,9 +342,24 @@ export default function App() {
         if (d.type === "pen") {
           return { ...d, points: [...d.points, p] };
         }
-        // Curve tools: Only use start and end points to generate S-curve
+        // Curve tools: Add intermediate points based on distance threshold for continuous S-curve dribbling
         if (isCurvedType(d.type)) {
-          return { ...d, points: [d.points[0], p] };
+          const lastPoint = d.points[d.points.length - 1];
+          const distFromLast = Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y);
+          
+          // Calculate distance threshold based on viewport size (smaller screens = smaller threshold)
+          const svg = svgRef.current;
+          const baseThreshold = svg ? Math.max(3, Math.min(8, svg.clientWidth / 100)) : 5;
+          
+          // Only add a new point if we've moved far enough from the last point
+          if (distFromLast >= baseThreshold) {
+            return { ...d, points: [...d.points, p] };
+          } else {
+            // Update the last point to current position for smooth preview
+            const newPoints = [...d.points];
+            newPoints[newPoints.length - 1] = p;
+            return { ...d, points: newPoints };
+          }
         }
         // Two-point tools: line, arrow, dashed, dashedArrow
         return { ...d, points: [d.points[0], p] };
