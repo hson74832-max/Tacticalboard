@@ -586,6 +586,16 @@ export default function App() {
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
       >
+        <defs>
+          <filter id="smooth-stroke" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="0.6" in="SourceAlpha" result="blur" />
+            <feSpecularLighting surfaceScale="1.5" specularConstant="0.8" specularExponent="20" lightingColor="#ffffff" in="blur" result="specular">
+              <fePointLight dx="0" dy="-2" dz="3" />
+            </feSpecularLighting>
+            <feComposite in="specular" in2="blur" operator="in" result="specular-blur" />
+            <feComposite in="SourceGraphic" in2="specular-blur" operator="over" />
+          </filter>
+        </defs>
         <Pitch grass="#1d743d" stripe="#185f31" line="#d7e5d8" mode={pitchMode} />
 
         <g id="board-content">
@@ -1035,7 +1045,6 @@ function SelectedEditor({
               <span className="w-16 text-xs text-white/60">Text</span>
               <input
                 value={el.label || ""}
-                maxLength={20}
                 onChange={(e) => onChange({ label: e.target.value })}
                 placeholder="Type here..."
                 className="flex-1 rounded-lg bg-slate-700 px-3 py-1.5 text-sm outline-none placeholder:text-white/30"

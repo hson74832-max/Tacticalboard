@@ -1,12 +1,14 @@
-```
+```gitignore
 # Dependencies
 node_modules/
 
-# Build artifacts
+# Build outputs
 dist/
-workbox-*.js
+build/
+*.js.map
+*.tsbuildinfo
 
-# Environment
+# Environment variables
 .env
 .env.local
 .env.*
@@ -18,34 +20,18 @@ workbox-*.js
 # Logs
 *.log
 
-# Temporary files
-*.tmp
-*.swp
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Python artifacts (if any)
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Compiled binary files
-*.o
-*.obj
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-selfcheck.json
 *.so
-*.a
-*.dll
-*.exe
-
-# Coverage reports
-coverage/
-htmlcov/
-
-# Local configuration
-.vite/
-!.vite/deps
-
+.DS_Store
+Thumbs.db
 ```
