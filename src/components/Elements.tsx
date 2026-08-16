@@ -363,9 +363,48 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   
-  // For two-point curves, use quadratic bezier with forced S-shape
   const p1 = points[0];
   const p2 = points[points.length - 1];
+
+  // For two-point curves, use a smooth arc with quadratic bezier
+  if (points.length === 2) {
+    // 1. Get direction vector
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const distance = Math.hypot(dx, dy) || 1;
+
+    // 2. Calculate normalized perpendicular vector (points to the left)
+    const nx = -dy / distance;
+    const ny = dx / distance;
+
+    // 3. Find the midpoint
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2;
+
+    // 4. Offset the control point by a percentage of the distance.
+    // curveFactor = 0.3 means the arc bulges out by 30% of the path length.
+    const curveFactor = 0.3; 
+    const offset = distance * curveFactor;
+    
+    const c = {
+      x: midX + nx * offset,
+      y: midY + ny * offset,
+    };
+
+    let end = p2;
+    if (shortenBy > 0) {
+      const tx = p2.x - c.x;
+      const ty = p2.y - c.y;
+      const tLen = Math.hypot(tx, ty) || 1;
+      end = {
+        x: p2.x - (tx / tLen) * shortenBy,
+        y: p2.y - (ty / tLen) * shortenBy,
+      };
+    }
+    return `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${end.x} ${end.y}`;
+  }
+
+  // For multi-point curves, use the control point approach
   const c = curveControl(p1, p2);
   let end = p2;
   if (shortenBy > 0) {
