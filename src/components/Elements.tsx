@@ -363,60 +363,60 @@ export function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
   
-  const p1 = points[0];
-  const p2 = points[points.length - 1];
-
-  // For two-point curves, use a smooth arc with quadratic bezier
+  // Edge case: Only two points (simple single swerve/arc)
   if (points.length === 2) {
-    // 1. Get direction vector
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const distance = Math.hypot(dx, dy) || 1;
-
-    // 2. Calculate normalized perpendicular vector (points to the left)
-    const nx = -dy / distance;
-    const ny = dx / distance;
-
-    // 3. Find the midpoint
+    const p1 = points[0];
+    const p2 = points[1];
     const midX = (p1.x + p2.x) / 2;
     const midY = (p1.y + p2.y) / 2;
-
-    // 4. Offset the control point by a percentage of the distance.
-    // curveFactor = 0.3 means the arc bulges out by 30% of the path length.
-    const curveFactor = 0.3; 
-    const offset = distance * curveFactor;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    // Perpendicular offset for a nice swerve
+    const offset = dist * 0.3;
+    const cx = midX - (dy / dist) * offset;
+    const cy = midY + (dx / dist) * offset;
     
-    const c = {
-      x: midX + nx * offset,
-      y: midY + ny * offset,
-    };
-
-    let end = p2;
+    let endX = p2.x, endY = p2.y;
     if (shortenBy > 0) {
-      const tx = p2.x - c.x;
-      const ty = p2.y - c.y;
+      const tx = p2.x - cx, ty = p2.y - cy;
       const tLen = Math.hypot(tx, ty) || 1;
-      end = {
-        x: p2.x - (tx / tLen) * shortenBy,
-        y: p2.y - (ty / tLen) * shortenBy,
-      };
+      endX = p2.x - (tx / tLen) * shortenBy;
+      endY = p2.y - (ty / tLen) * shortenBy;
     }
-    return `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${end.x} ${end.y}`;
+    return `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${endX} ${endY}`;
   }
 
-  // For multi-point curves, use the control point approach
-  const c = curveControl(p1, p2);
-  let end = p2;
-  if (shortenBy > 0) {
-    const tx = p2.x - c.x;
-    const ty = p2.y - c.y;
-    const tLen = Math.hypot(tx, ty) || 1;
-    end = {
-      x: p2.x - (tx / tLen) * shortenBy,
-      y: p2.y - (ty / tLen) * shortenBy,
-    };
+  // 3+ points: Continuous S-Zig-Zag via Catmull-Rom Spline to Cubic Beziers
+  let path = `M ${points[0].x} ${points[0].y}`;
+  const tension = 0.5; // 0.5 gives a perfectly smooth natural spline
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? 0 : i - 1];          // Previous point
+    const p1 = points[i];                           // Current point
+    const p2 = points[i + 1];                       // Next point
+    const p3 = points[i + 2 >= points.length ? points.length - 1 : i + 2]; // Next next
+
+    // Calculate Cubic Bezier control points for smooth curve
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+    let endX = p2.x;
+    let endY = p2.y;
+
+    // Apply shortening only to the absolute final point
+    if (i === points.length - 2 && shortenBy > 0) {
+      const tx = p2.x - cp2x, ty = p2.y - cp2y;
+      const tLen = Math.hypot(tx, ty) || 1;
+      endX = p2.x - (tx / tLen) * shortenBy;
+      endY = p2.y - (ty / tLen) * shortenBy;
+    }
+
+    path += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${endX} ${endY}`;
   }
-  return `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${end.x} ${end.y}`;
+  return path;
 }
 
 function curveControl(p1: Point, p2: Point) {

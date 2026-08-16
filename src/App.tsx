@@ -454,7 +454,7 @@ export default function App() {
       x: clamp(cx, 0, 68),
       y: clamp(cy, 0, 105),
       rotation: 0,
-      scale: 0.7,
+      scale: 0.5,
       color: col,
     };
     commit({ ...board, equipment: [...board.equipment, eq] });
@@ -1028,9 +1028,9 @@ function SelectedEditor({
             <span className="w-16 shrink-0 text-xs text-white/60">Size</span>
             <input
               type="range"
-              min={0.3}
-              max={1.5}
-              step={0.1}
+              min={0.2}
+              max={0.8}
+              step={0.05}
               value={el.scale}
               onChange={(e) => onChange({ scale: Number(e.target.value) })}
               className="flex-1 accent-emerald-500"
