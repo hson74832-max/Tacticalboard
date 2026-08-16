@@ -350,8 +350,6 @@ function isCurvedType(type: DrawingEl["type"]) {
   return type === "curve" || type === "curveDashed" || type === "curveArrow" || type === "curveDashedArrow";
 }
 
-export { isCurvedType };
-
 function curveControl(p1: Point, p2: Point) {
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
@@ -368,38 +366,6 @@ function curveControl(p1: Point, p2: Point) {
 function curvedPathFromPoints(points: Point[], shortenBy = 0) {
   if (points.length === 0) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-  
-  // Multi-point curve: use Catmull-Rom spline for smooth continuous curves
-  if (points.length >= 3) {
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i - 1] || points[i];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2] || p2;
-      
-      // Catmull-Rom to bezier conversion
-      const c1x = p1.x + (p2.x - p0.x) / 6;
-      const c1y = p1.y + (p2.y - p0.y) / 6;
-      const c2x = p2.x - (p3.x - p1.x) / 6;
-      const c2y = p2.y - (p3.y - p1.y) / 6;
-      
-      if (i === points.length - 2 && shortenBy > 0) {
-        // Shorten the last segment for arrowhead
-        const tx = p2.x - c2x;
-        const ty = p2.y - c2y;
-        const tLen = Math.hypot(tx, ty) || 1;
-        const endX = p2.x - (tx / tLen) * shortenBy;
-        const endY = p2.y - (ty / tLen) * shortenBy;
-        d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${endX} ${endY}`;
-      } else {
-        d += ` C ${c1x} ${c1y} ${c2x} ${c2y} ${p2.x} ${p2.y}`;
-      }
-    }
-    return d;
-  }
-  
-  // Single arc (legacy behavior for 2 points)
   const p1 = points[0];
   const p2 = points[points.length - 1];
   const c = curveControl(p1, p2);
